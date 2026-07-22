@@ -16,4 +16,57 @@ from tensorflow.keras import layers
 #   7. Salvar o modelo treinado como "model.h5"
 # ---------------------------------------------------------------------------
 
-# insira seu código aqui
+#bloco 1
+(train_x, train_y), (test_x, test_y) = keras.datasets.mnist.load_data()
+
+train_x = train_x.astype("float32") / 255.0
+test_x = test_x.astype("float32") / 255.0
+
+train_x = tf.expand_dims(train_x, axis=-1)
+test_x = tf.expand_dims(test_x, axis=-1)
+
+model = keras.Sequential([
+    layers.Input(shape=(28,28,1)),
+
+    layers.Conv2D(32, (3, 3), padding="same", activation="relu"),
+    layers.BatchNormalization(),
+    layers.MaxPooling2D((2,2)),
+
+    layers.Conv2D(64, (3,3), padding="same", activation="relu"),
+    layers.BatchNormalization(),
+    layers.MaxPooling2D((2, 2)),
+
+    layers.Conv2D(64, (3,3), padding="same", activation="relu"),
+    layers.BatchNormalization(),
+
+    layers.Flatten(),
+    layers.Dropout(0.5),
+    layers.Dense(10, activation="softmax"),
+])
+model.summary()
+
+model.compile(
+    optimizer="adam",
+    loss="sparse_categorical_crossentropy",
+    metrics=["accuracy"],
+)
+
+early_stop = keras.callbacks.EarlyStopping(
+    monitor="val_loss",
+    patience=3,
+    restore_best_weights=True
+)
+
+history = model.fit(
+    train_x, train_y,
+    validation_split=0.1,
+    epochs=15,
+    batch_size=128,
+    callbacks=[early_stop],
+)
+
+val_loss, val_acc = model.evaluate(test_x, test_y, verbose=0)
+print(f"\nAcurácia final no conjunto de teste: {val_acc:.2%}")
+
+model.save("model.h5")
+print("Modelo salvo como model.h5")
